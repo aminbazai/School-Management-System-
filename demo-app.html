@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>School Management System — Live Interactive Demo</title>
+  <meta name="description" content="Live interactive demo of an offline-first desktop School Management System. Four role-based workspaces, randomized data, fully in-browser." />
+  <meta name="author" content="Muhammad Amin Khan &amp; Munawar Khan" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            canvas: '#05070c', surface: '#090c13', panel: '#0f131c', panel2: '#141926',
+            elevated: '#1a2030', ink: '#e9edf6', ink2: '#b9c1d3', muted: '#8992a8',
+            dim: '#596074',
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root { --accent:#4c7df0; --accent-2:#7aa2ff; --accent-ink:#ffffff; color-scheme: dark; }
+    html.dark { color-scheme: dark; }
+    html.light { color-scheme: light; --canvas:#eef1f7; }
+    [data-accent='admin'] { --accent:#4c7df0; --accent-2:#7aa2ff; --accent-ink:#fff; }
+    [data-accent='office'] { --accent:#10b981; --accent-2:#5eead4; --accent-ink:#04231a; }
+    [data-accent='teacher'] { --accent:#8b5cf6; --accent-2:#b18bff; --accent-ink:#fff; }
+    [data-accent='student'] { --accent:#f59e0b; --accent-2:#fcd34d; --accent-ink:#2a1a02; }
+    body { margin:0; background:var(--canvas,#05070c); color:var(--ink,#e9edf6); font-family:Inter,system-ui,sans-serif; overflow:hidden; }
+    .app-bg { background: radial-gradient(1100px 620px at 88% -12%, color-mix(in srgb,var(--accent) 24%,transparent), transparent 62%), radial-gradient(820px 520px at 8% 108%, color-mix(in srgb,var(--accent) 12%,transparent), transparent 60%), #05070c; }
+    html.light body, html.light .app-bg { background:#eef1f7; color:#0f172a; }
+    .glass { background: rgba(255,255,255,0.028); border:1px solid rgba(255,255,255,0.07); backdrop-filter: blur(14px); }
+    .panel-solid { background:#0f131c; border:1px solid rgba(255,255,255,0.07); border-radius:16px; }
+    html.light .panel-solid { background:#fff; border-color:rgba(15,23,42,0.09); }
+    .nav-item { display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:11px; font-size:13.5px; font-weight:500; color:#8992a8; border:1px solid transparent; transition:all .15s; cursor:pointer; }
+    .nav-item:hover { background:rgba(255,255,255,0.045); color:#e9edf6; }
+    .nav-item-active { background:color-mix(in srgb,var(--accent) 14%,transparent); border-color:color-mix(in srgb,var(--accent) 34%,transparent); color:#e9edf6; }
+    .nav-item-active .nav-icon { color:var(--accent); }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:38px; padding:0 16px; border-radius:11px; border:1px solid rgba(255,255,255,0.07); background:rgba(255,255,255,0.045); color:#e9edf6; font-size:13.5px; font-weight:500; cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .btn:hover:not(:disabled){ background:color-mix(in srgb,#e9edf6 8%,transparent); border-color:rgba(255,255,255,0.12); }
+    .btn-primary { background:linear-gradient(180deg,var(--accent-2),var(--accent)); border-color:color-mix(in srgb,var(--accent) 70%,transparent); color:var(--accent-ink); box-shadow:0 8px 22px -12px color-mix(in srgb,var(--accent) 90%,transparent); }
+    .btn-sm { height:32px; padding:0 12px; font-size:12.5px; border-radius:9px; }
+    .input { height:40px; width:100%; padding:0 13px; border-radius:11px; background:rgba(5,7,12,0.55); border:1px solid rgba(255,255,255,0.07); color:#e9edf6; font-size:13.5px; }
+    .input:focus { outline:none; border-color:color-mix(in srgb,var(--accent) 70%,transparent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent); }
+    .chip { display:inline-flex; align-items:center; gap:6px; height:22px; padding:0 9px; border-radius:999px; font-size:11.5px; font-weight:500; border:1px solid rgba(255,255,255,0.07); background:rgba(255,255,255,0.045); color:#8992a8; white-space:nowrap; }
+    .data-table { width:100%; border-collapse:separate; border-spacing:0; font-size:13px; }
+    .data-table thead th { position:sticky; top:0; z-index:1; text-align:start; font-size:11.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:#596074; background:#141926; padding:11px 14px; border-bottom:1px solid rgba(255,255,255,0.07); white-space:nowrap; }
+    .data-table tbody td { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.07); color:#b9c1d3; vertical-align:middle; }
+    .data-table tbody tr:hover { background:rgba(233,237,246,0.04); }
+    .stat-card { background:linear-gradient(180deg,rgba(255,255,255,0.026),rgba(255,255,255,0.008)); border:1px solid rgba(255,255,255,0.07); border-radius:17px; padding:20px; }
+    .toast { position:fixed; left:50%; bottom:28px; transform:translate(-50%,16px); opacity:0; pointer-events:none; padding:10px 16px; border:1px solid rgba(255,255,255,0.12); border-radius:10px; background:rgba(15,19,28,0.96); backdrop-filter:blur(14px); font-size:11.5px; color:#b9c1d3; transition:all .25s; z-index:80; }
+    .toast.show { opacity:1; transform:translate(-50%,0); }
+    .segment { display:inline-flex; padding:3px; gap:2px; border-radius:10px; background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.07); }
+    .segment-item { height:26px; padding:0 11px; border-radius:8px; font-size:12px; font-weight:600; color:#596074; cursor:pointer; }
+    .segment-item-active { background:color-mix(in srgb,var(--accent) 20%,transparent); color:#e9edf6; }
+    /* scrollbar */
+    ::-webkit-scrollbar { width:10px; height:10px; }
+    ::-webkit-scrollbar-thumb { background:rgba(89,96,116,0.45); border-radius:999px; border:3px solid transparent; background-clip:content-box; }
+  </style>
+</head>
+<body>
+  <div id="shell" class="flex h-screen w-screen overflow-hidden app-bg" data-accent="admin">
+    <aside id="sidebar" class="flex h-full w-[264px] shrink-0 flex-col border-r border-white/7 bg-surface/70 backdrop-blur-xl"></aside>
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header id="topbar" class="flex h-[68px] shrink-0 items-center gap-4 border-b border-white/7 bg-surface/55 px-6 backdrop-blur-xl"></header>
+      <main class="min-h-0 flex-1 overflow-y-auto px-7 py-6">
+        <div class="mx-auto w-full max-w-[1400px]" id="main"></div>
+      </main>
+    </div>
+  </div>
+  <div id="toast" class="toast"></div>
+
+<script>
+// ---------- Data generators ----------
+const FIRST = ['Muhammad','Ali','Ahmed','Hassan','Hussain','Usman','Bilal','Omar','Zain','Hamza','Ayesha','Fatima','Zainab','Maryam','Khadija','Sara','Hina','Noor','Iqra','Amina','Saad','Tariq','Kamran','Imran','Faisal'];
+const LAST = ['Khan','Ahmed','Ali','Hussain','Malik','Sheikh','Qureshi','Butt','Raza','Chaudhry','Siddiqui','Farooq','Iqbal','Mirza','Shah','Jan','Yousafzai','Afridi'];
+const CLASSES = ['Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Grade 9','Grade 10'];
+const SECTIONS = ['A','B','C'];
+const SUBJECTS = ['Mathematics','English','Urdu','Science','Islamic Studies','Computer','Physics','Chemistry','Biology','History'];
+const TEACHER_ROLES = ['Senior Teacher','Teacher','Junior Teacher','Lab Instructor'];
+function rnd(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function pick(arr){ return arr[rnd(0,arr.length-1)]; }
+function genStudents(n=60){
+  return Array.from({length:n},(_,i)=>({
+    id:i+1, name:pick(FIRST)+' '+pick(LAST), roll:rnd(1,40),
+    className:pick(CLASSES), section:pick(SECTIONS),
+    gender:Math.random()<0.5?'Male':'Female',
+    phone:'03'+rnd(0,9)+rnd(10000000,99999999),
+    fee:pick(['Paid','Due','Partial']),
+    attendance:rnd(68,100),
+    gpa:(2.5+Math.random()*1.5).toFixed(2)
+  }));
+}
+function genStaff(n=18){
+  return Array.from({length:n},(_,i)=>({
+    id:i+1, name:pick(FIRST)+' '+pick(LAST),
+    role:pick(TEACHER_ROLES), subject:pick(SUBJECTS),
+    phone:'03'+rnd(0,9)+rnd(10000000,99999999),
+    salary:rnd(35,90)*1000, status:pick(['Active','On Leave']),
+    attendance:rnd(80,100)
+  }));
+}
+function genFees(students){
+  return students.map(s=>({
+    id:s.id, student:s.name, className:s.className+'-'+s.section,
+    amount:rnd(8,15)*1000, paid:s.fee==='Paid'?rnd(8,15)*1000:(s.fee==='Partial'?rnd(3,7)*1000:0),
+    status:s.fee, due:rnd(1,28)+'/05/2026'
+  }));
+}
+function genNotices(n=8){
+  const titles=['Parent-Teacher Meeting','Exam Schedule Released','Fee Submission Deadline','Holiday Notice','Sports Day','Result Announcement','Admission Open','Library Hours Updated'];
+  return Array.from({length:n},(_,i)=>({
+    id:i+1, title:titles[i%titles.length], date:'2026-0'+rnd(1,9)+'-'+String(rnd(1,28)).padStart(2,'0'),
+    body:'This is a demo notice with randomized content for the portfolio showcase. Please review the details and act accordingly.',
+    audience:pick(['All','Students','Staff','Parents'])
+  }));
+}
+function genExams(n=6){
+  return Array.from({length:n},(_,i)=>({
+    id:i+1, name:pick(['Midterm','Final','Unit Test','Quiz'])+' '+pick(SUBJECTS),
+    className:pick(CLASSES), date:'2026-0'+rnd(1,9)+'-'+String(rnd(1,28)).padStart(2,'0'),
+    totalMarks:pick([50,100]), status:pick(['Scheduled','Completed','Graded'])
+  }));
+}
+function genExpenses(n=12){
+  const cats=['Utilities','Salaries','Stationery','Maintenance','Transport','Events'];
+  return Array.from({length:n},(_,i)=>({
+    id:i+1, title:pick(['Electricity Bill','Staff Salary','Office Supplies','Building Repair','Bus Fuel','Annual Function']),
+    category:pick(cats), amount:rnd(5,80)*1000, date:'2026-0'+rnd(1,9)+'-'+String(rnd(1,28)).padStart(2,'0'),
+    status:pick(['Approved','Pending'])
+  }));
+}
+function genTimetable(){
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat'];
+  const periods=['08:00','09:00','10:00','11:00','12:00','13:00'];
+  const grid={};
+  days.forEach(d=>{ grid[d]=periods.map(()=>pick(SUBJECTS)); });
+  return {days,periods,grid};
+}
+const state = { role:'admin', page:'/admin/dashboard', theme:'dark', data:null, search:'', filterClass:'All', timetable:null };
+function regenerate(){
+  state.data = { students:genStudents(60), staff:genStaff(18), notices:genNotices(8), exams:genExams(8), expenses:genExpenses(12) };
+  state.data.fees = genFees(state.data.students);
+  state.timetable = genTimetable();
+}
+regenerate();
+
+// ---------- Menus ----------
+const MENUS = {
+ admin:{accent:'admin',groups:[
+  {label:'Main',items:[{to:'/admin/dashboard',label:'Dashboard',icon:'layout-dashboard'}]},
+  {label:'Manage',items:[
+   {to:'/admin/students',label:'Students',icon:'graduation-cap'},
+   {to:'/admin/staff',label:'Staff',icon:'id-card'},
+   {to:'/admin/messaging',label:'Messaging',icon:'messages-square'},
+   {to:'/admin/classes',label:'Classes',icon:'school'},
+   {to:'/admin/subjects',label:'Subjects',icon:'book-open'}]},
+  {label:'Academic',items:[
+   {to:'/admin/attendance',label:'Attendance',icon:'calendar-check'},
+   {to:'/admin/exams',label:'Exams',icon:'clipboard-list'},
+   {to:'/admin/timetable',label:'Timetable',icon:'calendar-range'},
+   {to:'/admin/notices',label:'Notices',icon:'megaphone'}]},
+  {label:'Finance',items:[
+   {to:'/admin/fees',label:'Fees',icon:'wallet'},
+   {to:'/admin/expenses',label:'Expenses',icon:'trending-down'},
+   {to:'/admin/salary',label:'Salary',icon:'banknote'}]},
+  {label:'System',items:[
+   {to:'/admin/users',label:'Users',icon:'user-cog'},
+   {to:'/admin/attendance-reports',label:'Attendance Reports',icon:'user-check'},
+   {to:'/admin/settings',label:'Settings',icon:'settings'},
+   {to:'/admin/backup',label:'Backup',icon:'database'},
+   {to:'/admin/audit',label:'Audit Log',icon:'scroll-text'}]}
+ ]},
+ office:{accent:'office',groups:[
+  {label:'Main',items:[{to:'/office/dashboard',label:'Dashboard',icon:'layout-dashboard'}]},
+  {label:'Manage',items:[
+   {to:'/office/staff',label:'Staff',icon:'id-card'},
+   {to:'/office/staff-attendance',label:'Staff Attendance',icon:'calendar-check'},
+   {to:'/office/admissions',label:'Admissions',icon:'user-plus'}]},
+  {label:'Finance',items:[
+   {to:'/office/salary',label:'Salary',icon:'banknote'},
+   {to:'/office/fees',label:'Fees',icon:'receipt'},
+   {to:'/office/expenses',label:'Expenses',icon:'trending-down'}]},
+  {label:'Academic',items:[
+   {to:'/office/attendance',label:'Attendance',icon:'calendar-check'},
+   {to:'/office/timetable',label:'Timetable',icon:'calendar-range'},
+   {to:'/office/notices',label:'Notices',icon:'megaphone'}]},
+  {label:'More',items:[
+   {to:'/office/reports',label:'Reports',icon:'bar-chart-3'},
+   {to:'/office/messaging',label:'Messaging',icon:'messages-square'}]}
+ ]},
+ teacher:{accent:'teacher',groups:[
+  {label:'Main',items:[
+   {to:'/teacher/dashboard',label:'Dashboard',icon:'layout-dashboard'},
+   {to:'/teacher/classes',label:'My Classes',icon:'school'},
+   {to:'/teacher/attendance',label:'Attendance',icon:'calendar-check'},
+   {to:'/teacher/marks',label:'Marks Entry',icon:'pencil-ruler'},
+   {to:'/teacher/timetable',label:'Timetable',icon:'calendar-range'}]},
+  {label:'More',items:[
+   {to:'/teacher/my-attendance',label:'My Attendance',icon:'clock'},
+   {to:'/teacher/my-leave',label:'My Leave',icon:'umbrella'},
+   {to:'/teacher/salary',label:'My Salary',icon:'banknote'},
+   {to:'/teacher/notices',label:'Notices',icon:'megaphone'}]}
+ ]},
+ student:{accent:'student',groups:[
+  {label:'Main',items:[
+   {to:'/student/dashboard',label:'Dashboard',icon:'layout-dashboard'},
+   {to:'/student/profile',label:'Profile',icon:'users'},
+   {to:'/student/class',label:'My Class',icon:'school'},
+   {to:'/student/attendance',label:'Attendance',icon:'calendar-check'},
+   {to:'/student/results',label:'Results',icon:'table-2'},
+   {to:'/student/fees',label:'Fees',icon:'wallet'}]},
+  {label:'More',items:[
+   {to:'/student/timetable',label:'Timetable',icon:'calendar-range'},
+   {to:'/student/notices',label:'Notices',icon:'megaphone'}]}
+ ]}
+};
+const ROLE_USERS = {
+ admin:{name:'Principal Admin',username:'admin'},
+ office:{name:'Office Manager',username:'office'},
+ teacher:{name:'Ms. Ayesha Khan',username:'teacher'},
+ student:{name:'Ali Hassan',username:'student'}
+};
+const SCHOOL_NAME = 'Demo Public School';
+
+// ---------- Render shell ----------
+function switchRole(role){
+  state.role = role;
+  state.page = MENUS[role].groups[0].items[0].to;
+  document.getElementById('shell').setAttribute('data-accent', MENUS[role].accent);
+  renderSidebar(); renderTopbar(); renderMain();
+}
+function navigate(path){ state.page = path; renderTopbar(); renderMain(); }
+function toggleTheme(){
+  state.theme = state.theme==='dark'?'light':'dark';
+  document.documentElement.classList.toggle('light', state.theme==='light');
+  document.documentElement.classList.toggle('dark', state.theme==='dark');
+  renderTopbar();
+}
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+function regenerateData(){ regenerate(); renderMain(); showToast('Demo data regenerated'); }
+
+function renderSidebar(){
+  const cfg = MENUS[state.role];
+  const root=document.getElementById('sidebar');
+  let html = `
+    <div class="flex items-center gap-3 px-5 py-5">
+      <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-b from-[var(--accent-2)] to-[var(--accent)] text-white shadow-[0_8px_18px_-8px_var(--accent)]">
+        <i data-lucide="graduation-cap" class="w-[18px] h-[18px]"></i>
+      </div>
+      <div class="min-w-0">
+        <p class="truncate text-[13.5px] font-semibold leading-tight text-ink">${SCHOOL_NAME}</p>
+        <p class="truncate text-[11px] text-dim">${state.role.charAt(0).toUpperCase()+state.role.slice(1)} Workspace</p>
+      </div>
+    </div>
+    <nav class="min-h-0 flex-1 overflow-y-auto px-3 pb-4">`;
+  cfg.groups.forEach(g=>{
+    html += `<div class="mb-4"><p class="text-[10.5px] font-semibold uppercase tracking-wider text-dim px-3 pb-2">${g.label}</p><div class="flex flex-col gap-0.5">`;
+    g.items.forEach(it=>{
+      const active = state.page===it.to;
+      html += `<div class="nav-item ${active?'nav-item-active':''}" onclick="navigate('${it.to}')">
+        <i data-lucide="${it.icon}" class="nav-icon w-4 h-4 shrink-0 text-dim"></i>
+        <span class="flex-1 truncate">${it.label}</span>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  html += `</nav>
+    <div class="border-t border-white/7 p-3">
+      <div class="flex items-center gap-2.5 rounded-xl px-2 py-2">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/12 bg-white/5 text-[12px] font-semibold text-ink">
+          ${ROLE_USERS[state.role].name.split(' ').map(w=>w[0]).join('').slice(0,2)}
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-[12.5px] font-medium text-ink">${ROLE_USERS[state.role].name}</p>
+          <p class="truncate text-[11px] text-dim">@${ROLE_USERS[state.role].username}</p>
+        </div>
+      </div>
+      <div class="mt-2 flex gap-2">
+        <button class="btn btn-sm flex-1" onclick="regenerateData()"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Regenerate</button>
+      </div>
+    </div>`;
+  root.innerHTML = html;
+  lucide.createIcons();
+}
+
+function renderTopbar(){
+  const cfg = MENUS[state.role];
+  const all = cfg.groups.flatMap(g=>g.items);
+  const cur = all.filter(i=>state.page===i.to||state.page.startsWith(i.to+'/')).sort((a,b)=>b.to.length-a.to.length)[0];
+  const title = cur ? cur.label : 'Dashboard';
+  const root=document.getElementById('topbar');
+  root.innerHTML = `
+    <div class="min-w-0 flex-1">
+      <p class="text-[10.5px] font-semibold uppercase tracking-wider text-dim">School Management System</p>
+      <h1 class="truncate text-[15px] font-semibold tracking-tight text-ink">${title}</h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <select class="input" style="width:150px;height:36px" onchange="switchRole(this.value)">
+        ${['admin','office','teacher','student'].map(r=>`<option value="${r}" ${state.role===r?'selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)} view</option>`).join('')}
+      </select>
+      <button class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/7 bg-white/5 text-muted hover:text-ink" onclick="toggleTheme()" title="Toggle theme">
+        <i data-lucide="${state.theme==='dark'?'sun':'moon'}" class="w-4 h-4"></i>
+      </button>
+      <button class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/7 bg-white/5 text-muted hover:text-ink" title="Notifications">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+      </button>
+    </div>`;
+  lucide.createIcons();
+}
+
+// ---------- Pages ----------
+function statCard(label,value,sub,icon,color){
+  return `<div class="stat-card">
+    <div class="flex items-center justify-between">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-dim">${label}</p>
+      <div class="flex h-9 w-9 items-center justify-center rounded-xl" style="background:color-mix(in srgb,${color} 14%,transparent);color:${color}"><i data-lucide="${icon}" class="w-4 h-4"></i></div>
+    </div>
+    <p class="mt-3 text-2xl font-semibold tracking-tight text-ink">${value}</p>
+    <p class="mt-1 text-[11.5px] text-muted">${sub}</p>
+  </div>`;
+}
+function renderDashboard(){
+  const d=state.data;
+  const students=d.students.length;
+  const staff=d.staff.length;
+  const classes=new Set(d.students.map(s=>s.className)).size;
+  const collected=d.fees.reduce((a,f)=>a+f.paid,0);
+  const due=d.fees.reduce((a,f)=>a+(f.amount-f.paid),0);
+  if(state.role==='admin' || state.role==='office'){
+    // monthly bars
+    const months=['Jan','Feb','Mar','Apr','May','Jun'];
+    const vals=months.map(()=>rnd(40,100));
+    const max=Math.max(...vals);
+    const bars=months.map((m,i)=>`<div class="flex flex-col items-center gap-2"><div class="w-8 rounded-t-md" style="height:${(vals[i]/max)*120}px;background:linear-gradient(180deg,var(--accent-2),var(--accent))"></div><span class="text-[10px] text-dim">${m}</span></div>`).join('');
+    return `
+      <div class="mb-6 flex items-center justify-between">
+        <div><h2 class="text-xl font-semibold tracking-tight text-ink">Dashboard</h2><p class="text-[12.5px] text-muted">Overview of your school at a glance.</p></div>
+        <button class="btn btn-primary btn-sm" onclick="regenerateData()"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Randomize</button>
+      </div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        ${statCard('Total Students',students,'Across all classes','users','#4c7df0')}
+        ${statCard('Staff Members',staff,'Teaching & non-teaching','id-card','#10b981')}
+        ${statCard('Classes',classes,'Active sections','school','#8b5cf6')}
+        ${statCard('Fees Collected','PKR '+(collected/1000).toFixed(0)+'k','Due: PKR '+(due/1000).toFixed(0)+'k','wallet','#f59e0b')}
+      </div>
+      <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div class="panel-solid p-5 lg:col-span-2">
+          <div class="mb-4 flex items-center justify-between"><h3 class="text-[14px] font-semibold text-ink">Fee collection trend</h3><span class="text-[11px] text-dim">Last 6 months</span></div>
+          <div class="flex items-end justify-between gap-3 px-2" style="height:150px">${bars}</div>
+        </div>
+        <div class="panel-solid p-5">
+          <h3 class="mb-3 text-[14px] font-semibold text-ink">Attendance overview</h3>
+          ${['Students','Staff'].map((x,i)=>`<div class="mb-3"><div class="flex justify-between text-[12px] text-muted mb-1"><span>${x}</span><span>${rnd(85,96)}%</span></div><div class="h-2 rounded-full bg-white/5"><div class="h-2 rounded-full" style="width:${rnd(85,96)}%;background:var(--accent)"></div></div></div>`).join('')}
+          <h3 class="mt-5 mb-3 text-[14px] font-semibold text-ink">Recent notices</h3>
+          ${d.notices.slice(0,3).map(n=>`<div class="mb-2 rounded-lg border border-white/7 bg-white/3 p-2.5"><p class="text-[12px] font-medium text-ink">${n.title}</p><p class="text-[10.5px] text-dim">${n.date} · ${n.audience}</p></div>`).join('')}
+        </div>
+      </div>
+      <div class="mt-6 panel-solid p-5">
+        <div class="mb-3 flex items-center justify-between"><h3 class="text-[14px] font-semibold text-ink">Recent admissions</h3><span class="text-[11px] text-dim">Last 5</span></div>
+        <table class="data-table"><thead><tr><th>Name</th><th>Class</th><th>Roll</th><th>Fee status</th><th>Attendance</th></tr></thead><tbody>
+          ${d.students.slice(0,5).map(s=>`<tr><td class="text-ink">${s.name}</td><td>${s.className}-${s.section}</td><td>${s.roll}</td><td><span class="chip" style="color:${s.fee==='Paid'?'#22c55e':s.fee==='Due'?'#ef4444':'#f59e0b'}">${s.fee}</span></td><td>${s.attendance}%</td></tr>`).join('')}
+        </tbody></table>
+      </div>`;
+  }
+  if(state.role==='teacher'){
+    const myClasses = CLASSES.slice(0,4);
+    return `
+      <div class="mb-6"><h2 class="text-xl font-semibold tracking-tight text-ink">Welcome back, ${ROLE_USERS.teacher.name}</h2><p class="text-[12.5px] text-muted">Your teaching overview for today.</p></div>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        ${statCard('My Classes',4,'Active sections','school','#8b5cf6')}
+        ${statCard('Students',rnd(120,180),'Across my classes','users','#4c7df0')}
+        ${statCard('Pending Marks',rnd(2,8),'To be entered','pencil-ruler','#f59e0b')}
+        ${statCard('This Month Salary','PKR '+rnd(45,75)+'k','Net payable','banknote','#10b981')}
+      </div>
+      <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div class="panel-solid p-5">
+          <h3 class="mb-3 text-[14px] font-semibold text-ink">Today's schedule</h3>
+          ${state.timetable.periods.slice(0,5).map((p,i)=>`<div class="flex items-center gap-3 rounded-lg border border-white/7 bg-white/3 p-3 mb-2"><span class="w-14 text-[11px] font-mono text-dim">${p}</span><div><p class="text-[12.5px] font-medium text-ink">${state.timetable.grid.Mon[i]}</p><p class="text-[10.5px] text-dim">${pick(CLASSES)}-${pick(SECTIONS)}</p></div></div>`).join('')}
+        </div>
+        <div class="panel-solid p-5">
+          <h3 class="mb-3 text-[14px] font-semibold text-ink">My classes</h3>
+          ${myClasses.map(c=>`<div class="mb-2 flex items-center justify-between rounded-lg border border-white/7 bg-white/3 p-3"><div><p class="text-[12.5px] font-medium text-ink">${c}</p><p class="text-[10.5px] text-dim">${rnd(25,40)} students</p></div><span class="chip">Section ${pick(SECTIONS)}</span></div>`).join('')}
+        </div>
+      </div>`;
+  }
+  // student
+  const s=d.students[0];
+  return `
+    <div class="mb-6"><h2 class="text-xl font-semibold tracking-tight text-ink">Welcome, ${ROLE_USERS.student.name}</h2><p class="text-[12.5px] text-muted">Your academic snapshot.</p></div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      ${statCard('Attendance',s.attendance+'%','This term','calendar-check','#10b981')}
+      ${statCard('Current GPA',s.gpa,'Overall','table-2','#4c7df0')}
+      ${statCard('Fees Due','PKR '+rnd(3,8)+'k','Pending','wallet','#f59e0b')}
+      ${statCard('Rank','#'+rnd(1,25),'In class','award','#8b5cf6')}
+    </div>
+    <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div class="panel-solid p-5">
+        <h3 class="mb-3 text-[14px] font-semibold text-ink">Recent results</h3>
+        <table class="data-table"><thead><tr><th>Subject</th><th>Marks</th><th>Grade</th></tr></thead><tbody>
+          ${SUBJECTS.slice(0,6).map(sub=>`<tr><td>${sub}</td><td>${rnd(55,98)}/100</td><td><span class="chip">${pick(['A','A+','B','B+'])}</span></td></tr>`).join('')}
+        </tbody></table>
+      </div>
+      <div class="panel-solid p-5">
+        <h3 class="mb-3 text-[14px] font-semibold text-ink">Today's classes</h3>
+        ${state.timetable.periods.slice(0,5).map((p,i)=>`<div class="flex items-center gap-3 rounded-lg border border-white/7 bg-white/3 p-3 mb-2"><span class="w-14 text-[11px] font-mono text-dim">${p}</span><p class="text-[12.5px] font-medium text-ink">${state.timetable.grid.Mon[i]}</p></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function renderStudents(){
+  const d=state.data;
+  const filtered = d.students.filter(s=>{
+    if(state.filterClass!=='All' && s.className!==state.filterClass) return false;
+    if(state.search && !s.name.toLowerCase().includes(state.search.toLowerCase())) return false;
+    return true;
+  });
+  return `
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div><h2 class="text-xl font-semibold tracking-tight text-ink">Students</h2><p class="text-[12.5px] text-muted">${filtered.length} of ${d.students.length} students</p></div>
+      <div class="flex gap-2">
+        <input class="input" style="width:220px" placeholder="Search name..." value="${state.search}" oninput="state.search=this.value;renderMain()" />
+        <select class="input" style="width:140px" onchange="state.filterClass=this.value;renderMain()">
+          <option>All</option>${CLASSES.map(c=>`<option ${state.filterClass===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="addStudent()"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button>
+      </div>
+    </div>
+    <div class="panel-solid overflow-hidden">
+      <table class="data-table"><thead><tr><th>Name</th><th>Roll</th><th>Class</th><th>Gender</th><th>Phone</th><th>Fee</th><th>Attendance</th></tr></thead><tbody>
+        ${filtered.map(s=>`<tr>
+          <td class="text-ink font-medium">${s.name}</td><td>${s.roll}</td><td>${s.className}-${s.section}</td><td>${s.gender}</td><td class="font-mono text-[11.5px]">${s.phone}</td>
+          <td><span class="chip" style="color:${s.fee==='Paid'?'#22c55e':s.fee==='Due'?'#ef4444':'#f59e0b'}">${s.fee}</span></td>
+          <td>${s.attendance}%</td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+function addStudent(){
+  const s = genStudents(1)[0]; s.id = state.data.students.length+1; state.data.students.unshift(s);
+  state.data.fees.unshift({id:s.id,student:s.name,className:s.className+'-'+s.section,amount:rnd(8,15)*1000,paid:0,status:s.fee,due:'15/05/2026'});
+  renderMain(); showToast('Student added (demo)');
+}
+
+function renderStaff(){
+  const d=state.data;
+  return `
+    <div class="mb-4 flex items-center justify-between"><div><h2 class="text-xl font-semibold tracking-tight text-ink">Staff</h2><p class="text-[12.5px] text-muted">${d.staff.length} members</p></div>
+    <button class="btn btn-primary btn-sm" onclick="addStaff()"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button></div>
+    <div class="panel-solid overflow-hidden">
+      <table class="data-table"><thead><tr><th>Name</th><th>Role</th><th>Subject</th><th>Phone</th><th>Salary</th><th>Status</th><th>Attendance</th></tr></thead><tbody>
+        ${d.staff.map(s=>`<tr><td class="text-ink font-medium">${s.name}</td><td>${s.role}</td><td>${s.subject}</td><td class="font-mono text-[11.5px]">${s.phone}</td><td>PKR ${(s.salary/1000).toFixed(0)}k</td><td><span class="chip" style="color:${s.status==='Active'?'#22c55e':'#f59e0b'}">${s.status}</span></td><td>${s.attendance}%</td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+function addStaff(){ const s=genStaff(1)[0]; s.id=state.data.staff.length+1; state.data.staff.unshift(s); renderMain(); showToast('Staff added (demo)'); }
+
+function renderClasses(){
+  const d=state.data;
+  const map={};
+  d.students.forEach(s=>{ const k=s.className+'-'+s.section; map[k]=(map[k]||0)+1; });
+  const teachers=d.staff.filter(s=>s.role.includes('Teacher'));
+  return `
+    <div class="mb-4"><h2 class="text-xl font-semibold tracking-tight text-ink">Classes &amp; Subjects</h2><p class="text-[12.5px] text-muted">Manage class sections and subjects.</p></div>
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div class="panel-solid overflow-hidden">
+        <div class="px-4 py-3 border-b border-white/7"><h3 class="text-[13.5px] font-semibold text-ink">Class sections</h3></div>
+        <table class="data-table"><thead><tr><th>Class</th><th>Students</th><th>Class teacher</th></tr></thead><tbody>
+          ${Object.keys(map).map(k=>`<tr><td class="text-ink font-medium">${k}</td><td>${map[k]}</td><td>${pick(teachers).name}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+      <div class="panel-solid p-5">
+        <h3 class="text-[13.5px] font-semibold text-ink mb-3">Subjects</h3>
+        <div class="flex flex-wrap gap-2">
+          ${SUBJECTS.map(s=>`<span class="chip" style="height:26px;padding:0 12px">${s}</span>`).join('')}
+        </div>
+        <h3 class="text-[13.5px] font-semibold text-ink mt-5 mb-3">Quick actions</h3>
+        <div class="flex gap-2">
+          <button class="btn btn-sm" onclick="showToast('Create class (demo)')">New class</button>
+          <button class="btn btn-sm" onclick="showToast('Add subject (demo)')">New subject</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderAttendance(){
+  const d=state.data;
+  const rows=d.students.slice(0,15);
+  return `
+    <div class="mb-4 flex items-center justify-between"><div><h2 class="text-xl font-semibold tracking-tight text-ink">Student Attendance</h2><p class="text-[12.5px] text-muted">Mark daily attendance.</p></div>
+    <div class="flex gap-2"><input class="input" type="date" style="width:160px" value="2026-05-12" /><button class="btn btn-primary btn-sm" onclick="showToast('Attendance saved (demo)')">Save</button></div></div>
+    <div class="panel-solid overflow-hidden">
+      <table class="data-table"><thead><tr><th>Name</th><th>Class</th><th>Status</th><th>Action</th></tr></thead><tbody>
+        ${rows.map(s=>`<tr><td class="text-ink font-medium">${s.name}</td><td>${s.className}-${s.section}</td><td><span class="chip" style="color:${Math.random()<0.85?'#22c55e':'#ef4444'}">${Math.random()<0.85?'Present':'Absent'}</span></td>
+        <td><div class="flex gap-1"><button class="btn btn-sm" style="height:26px;padding:0 8px" onclick="showToast('Marked present')">P</button><button class="btn btn-sm" style="height:26px;padding:0 8px" onclick="showToast('Marked absent')">A</button></div></td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+function renderFees(){
+  const d=state.data;
+  return `
+    <div class="mb-4 flex items-center justify-between"><div><h2 class="text-xl font-semibold tracking-tight text-ink">Fees</h2><p class="text-[12.5px] text-muted">Collect and track student fees.</p></div>
+    <button class="btn btn-primary btn-sm" onclick="showToast('Collect fee (demo)')"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Collect</button></div>
+    <div class="panel-solid overflow-hidden">
+      <table class="data-table"><thead><tr><th>Student</th><th>Class</th><th>Amount</th><th>Paid</th><th>Due date</th><th>Status</th><th></th></tr></thead><tbody>
+        ${d.fees.slice(0,25).map(f=>`<tr><td class="text-ink font-medium">${f.student}</td><td>${f.className}</td><td>PKR ${f.amount}</td><td>PKR ${f.paid}</td><td>${f.due}</td>
+        <td><span class="chip" style="color:${f.status==='Paid'?'#22c55e':f.status==='Due'?'#ef4444':'#f59e0b'}">${f.status}</span></td>
+        <td><button class="btn btn-sm" style="height:26px;padding:0 8px" onclick="showToast('Receipt generated (demo)')">Receipt</button></td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+function renderExpenses(){
+  const d=state.data;
+  return `
+    <div class="mb-4 flex items-center justify-between"><div><h2 class="text-xl font-semibold tracking-tight text-ink">Expenses</h2><p class="text-[12.5px] text-muted">Track school expenditures.</p></div>
+    <button class="btn btn-primary btn-sm" onclick="showToast('Add expense (demo)')"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button></div>
+    <div class="panel-solid overflow-hidden">
+      <table class="data-table"><thead><tr><th>Title</th><th>Category</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead><tbody>
+        ${d.expenses.map(e=>`<tr><td class="text-ink font-medium">${e.title}</td><td>${e.category}</td><td>PKR ${e.amount}</td><td>${e.date}</td><td><span class="chip" style="color:${e.status==='Approved'?'#22c55e':'#f59e0b'}">${e.status}</span></td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+function renderSalary(){
+  const d=state.data;
+  return `
+    <div class="mb-4"><h2 class="text-xl font-semibold tracking-tight text-ink">Salary</h2><p class="text-[12.5px] text-muted">Staff payroll management.</p></div>
+    <div class="panel-solid overflow-hidden">
+      <table class="data-table"><thead><tr><th>Staff</th><th>Role</th><th>Basic</th><th>Allowances</th><th>Deductions</th><th>Net</th><th>Status</th></tr></thead><tbody>
+        ${d.staff.map(s=>{ const allow=rnd(3,8)*1000, ded=rnd(1,4)*1000; return `<tr><td class="text-ink font-medium">${s.name}</td><td>${s.role}</td><td>PKR ${(s.salary/1000).toFixed(0)}k</td><td>PKR ${(allow/1000).toFixed(0)}k</td><td>PKR ${(ded/1000).toFixed(0)}k</td><td>PKR ${((s.salary+allow-ded)/1000).toFixed(0)}k</td><td><span class="chip" style="color:${Math.random()<0.7?'#22c55e':'#f59e0b'}">${Math.random()<0.7?'Paid':'Pending'}</span></td></tr>`;}).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+function renderExams(){
+  const d=state.data;
+  return `
+    <div class="mb-4 flex items-center justify-between"><div><h2 class="text-xl font-semibold tracking-tight text-ink">Exams</h2><p class="text-[12.5px] text-muted">Manage examinations.</p></div>
+    <button class="btn btn-primary btn-sm" onclick="showToast('Create exam (demo)')"><i data-lucide="plus" class="w-3.5 h-3.5"></i> New exam</button></div>
+    <div class="panel-solid overflow-hidden">
+      <table class="data-table"><thead><tr><th>Exam</th><th>Class</th><th>Date</th><th>Total marks</th><th>Status</th></tr></thead><tbody>
+        ${d.exams.map(e=>`<tr><td class="text-ink font-medium">${e.name}</td><td>${e.className}</td><td>${e.date}</td><td>${e.totalMarks}</td><td><span class="chip" style="color:${e.status==='Graded'?'#22c55e':e.status==='Completed'?'#38bdf8':'#f59e0b'}">${e.status}</span></td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+function renderMarks(){
+  const d=state.data;
+  const rows=d.students.slice(0,12);
+  return `
+    <div class="mb-4 flex items-center justify-between"><div><h2 class="text-xl font-semibold tracking-tight text-ink">Marks Entry</h2><p class="text-[12.5px] text-muted">Enter student marks.</p></div>
+    <button class="btn btn-primary btn-sm" onclick="showToast('Marks saved (demo)')">Save all</button></div>
+    <div class="panel-solid overflow-hidden">
+      <table class="data-table"><thead><tr><th>Student</th><th>Class</th>${SUBJECTS.slice(0,4).map(s=>`<th>${s}</th>`).join('')}</tr></thead><tbody>
+        ${rows.map(s=>`<tr><td class="text-ink font-medium">${s.name}</td><td>${s.className}</td>${SUBJECTS.slice(0,4).map(()=>`<td><input class="input" style="width:60px;height:28px;padding:0 6px" value="${rnd(50,98)}" /></td>`).join('')}</tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+function renderTimetable(){
+  const t=state.timetable;
+  return `
+    <div class="mb-4"><h2 class="text-xl font-semibold tracking-tight text-ink">Timetable</h2><p class="text-[12.5px] text-muted">Weekly class schedule.</p></div>
+    <div class="panel-solid overflow-hidden">
+      <table class="data-table"><thead><tr><th>Time</th>${t.days.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>
+        ${t.periods.map((p,pi)=>`<tr><td class="font-mono text-[11.5px] text-dim">${p}</td>${t.days.map(d=>`<td class="text-[12px]">${t.grid[d][pi]}</td>`).join('')}</tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+function renderNotices(){
+  const d=state.data;
+  return `
+    <div class="mb-4 flex items-center justify-between"><div><h2 class="text-xl font-semibold tracking-tight text-ink">Notices</h2><p class="text-[12.5px] text-muted">School announcements.</p></div>
+    <button class="btn btn-primary btn-sm" onclick="showToast('Create notice (demo)')"><i data-lucide="plus" class="w-3.5 h-3.5"></i> New</button></div>
+    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+      ${d.notices.map(n=>`<div class="panel-solid p-5">
+        <div class="flex items-center justify-between mb-2"><h3 class="text-[13.5px] font-semibold text-ink">${n.title}</h3><span class="chip">${n.audience}</span></div>
+        <p class="text-[12px] text-muted mb-3">${n.body}</p>
+        <p class="text-[10.5px] text-dim">${n.date}</p>
+      </div>`).join('')}
+    </div>`;
+}
+
+function renderUsers(){
+  const users=[
+    {name:'Principal Admin',role:'admin',status:'Active'},
+    {name:'Office Manager',role:'office',status:'Active'},
+    {name:'Ms. Ayesha Khan',role:'teacher',status:'Active'},
+    {name:'Ali Hassan',role:'student',status:'Active'},
+    {name:'Mr. Tariq',role:'teacher',status:'Active'},
+  ];
+  return `
+    <div class="mb-4 flex items-center justify-between"><div><h2 class="text-xl font-semibold tracking-tight text-ink">Users</h2><p class="text-[12.5px] text-muted">Manage system users and roles.</p></div>
+    <button class="btn btn-primary btn-sm" onclick="showToast('Add user (demo)')"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add</button></div>
+    <div class="panel-solid overflow-hidden">
+      <table class="data-table"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th></tr></thead><tbody>
+        ${users.map(u=>`<tr><td class="text-ink font-medium">${u.name}</td><td class="font-mono text-[11.5px]">${u.name.split(' ')[0].toLowerCase()}</td><td><span class="chip">${u.role}</span></td><td><span class="chip" style="color:#22c55e">${u.status}</span></td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+function renderSettings(){
+  return `
+    <div class="mb-4"><h2 class="text-xl font-semibold tracking-tight text-ink">Settings</h2><p class="text-[12.5px] text-muted">School configuration.</p></div>
+    <div class="panel-solid p-5 max-w-2xl">
+      <div class="grid grid-cols-1 gap-4">
+        <div><label class="block text-[12.5px] text-muted mb-1">School name</label><input class="input" value="${SCHOOL_NAME}" /></div>
+        <div><label class="block text-[12.5px] text-muted mb-1">Academic year</label><input class="input" value="2025-2026" /></div>
+        <div><label class="block text-[12.5px] text-muted mb-1">Language</label><select class="input"><option>English</option><option>Urdu</option></select></div>
+        <div><label class="block text-[12.5px] text-muted mb-1">Theme</label><select class="input"><option>Dark</option><option>Light</option></select></div>
+        <button class="btn btn-primary btn-sm" style="width:120px" onclick="showToast('Settings saved (demo)')">Save</button>
+      </div>
+    </div>`;
+}
+
+function renderAdmissions(){
+  const d=state.data;
+  return `
+    <div class="mb-4 flex items-center justify-between"><div><h2 class="text-xl font-semibold tracking-tight text-ink">Admissions</h2><p class="text-[12.5px] text-muted">New student admissions.</p></div>
+    <button class="btn btn-primary btn-sm" onclick="showToast('Admission form (demo)')"><i data-lucide="plus" class="w-3.5 h-3.5"></i> New admission</button></div>
+    <div class="panel-solid overflow-hidden">
+      <table class="data-table"><thead><tr><th>Applicant</th><th>Class</th><th>Date</th><th>Status</th></tr></thead><tbody>
+        ${d.students.slice(0,10).map(s=>`<tr><td class="text-ink font-medium">${s.name}</td><td>${s.className}</td><td>2026-0${rnd(1,5)}-${String(rnd(1,28)).padStart(2,'0')}</td><td><span class="chip" style="color:${pick(['#22c55e','#f59e0b','#38bdf8'])}">${pick(['Approved','Pending','In review'])}</span></td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+function renderReports(){
+  return `
+    <div class="mb-4"><h2 class="text-xl font-semibold tracking-tight text-ink">Reports</h2><p class="text-[12.5px] text-muted">School performance reports.</p></div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      ${['Student Report','Fee Collection Report','Attendance Report','Salary Report','Expense Report','Exam Report'].map(t=>`<div class="panel-solid p-5 cursor-pointer hover:border-white/12" onclick="showToast('${t} generated (demo)')"><div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-[var(--accent)] mb-3"><i data-lucide="bar-chart-3" class="w-5 h-5"></i></div><h3 class="text-[13.5px] font-semibold text-ink">${t}</h3><p class="text-[11.5px] text-muted mt-1">Click to generate (demo)</p></div>`).join('')}
+    </div>`;
+}
+
+function renderStaffAttendance(){
+  const d=state.data;
+  return `
+    <div class="mb-4 flex items-center justify-between"><div><h2 class="text-xl font-semibold tracking-tight text-ink">Staff Attendance</h2><p class="text-[12.5px] text-muted">Track staff attendance.</p></div>
+    <button class="btn btn-primary btn-sm" onclick="showToast('Saved (demo)')">Save</button></div>
+    <div class="panel-solid overflow-hidden">
+      <table class="data-table"><thead><tr><th>Staff</th><th>Role</th><th>Status</th></tr></thead><tbody>
+        ${d.staff.map(s=>`<tr><td class="text-ink font-medium">${s.name}</td><td>${s.role}</td><td><span class="chip" style="color:${Math.random()<0.9?'#22c55e':'#ef4444'}">${Math.random()<0.9?'Present':'Absent'}</span></td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+function renderGeneric(path){
+  const name = path.split('/').pop().replace(/-/g,' ');
+  return `
+    <div class="mb-4"><h2 class="text-xl font-semibold tracking-tight text-ink">${name.charAt(0).toUpperCase()+name.slice(1)}</h2><p class="text-[12.5px] text-muted">Module preview with randomized demo data.</p></div>
+    <div class="panel-solid p-8 text-center">
+      <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-[var(--accent)]"><i data-lucide="construction" class="w-7 h-7"></i></div>
+      <p class="text-[13px] text-muted">This module is available in the full desktop app. This demo shows the navigation and styling.</p>
+      <button class="btn btn-primary btn-sm mt-4" onclick="navigate('/${state.role}/dashboard')">Back to dashboard</button>
+    </div>`;
+}
+
+function renderMain(){
+  const path=state.page;
+  const el=document.getElementById('main');
+  let html='';
+  if(path.endsWith('dashboard')) html=renderDashboard();
+  else if(path.includes('students')) html=renderStudents();
+  else if(path.includes('staff-attendance')) html=renderStaffAttendance();
+  else if(path.includes('staff')) html=renderStaff();
+  else if(path.includes('classes')||path.includes('subjects')) html=renderClasses();
+  else if(path.includes('attendance-reports')) html=renderAttendance();
+  else if(path.includes('attendance')) html=renderAttendance();
+  else if(path.includes('fees')||path.includes('student-fees')) html=renderFees();
+  else if(path.includes('expenses')) html=renderExpenses();
+  else if(path.includes('salary')) html=renderSalary();
+  else if(path.includes('exams')) html=renderExams();
+  else if(path.includes('marks')) html=renderMarks();
+  else if(path.includes('timetable')) html=renderTimetable();
+  else if(path.includes('notices')) html=renderNotices();
+  else if(path.includes('users')) html=renderUsers();
+  else if(path.includes('settings')) html=renderSettings();
+  else if(path.includes('admissions')) html=renderAdmissions();
+  else if(path.includes('reports')) html=renderReports();
+  else if(path.includes('backup')||path.includes('audit')||path.includes('messaging')||path.includes('change-password')||path.includes('profile')||path.includes('class')||path.includes('results')||path.includes('my-')) html=renderGeneric(path);
+  else html=renderGeneric(path);
+  el.innerHTML=html;
+  lucide.createIcons();
+}
+
+// init
+document.documentElement.classList.add('dark');
+renderSidebar(); renderTopbar(); renderMain();
+</script>
+</body>
+</html>

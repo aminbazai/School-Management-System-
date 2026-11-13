@@ -1,0 +1,294 @@
+SCHOOL MANAGEMENT SYSTEM - COMPLETE USER GUIDE
+Version 1.0.0
+Offline-first desktop application (Electron + React + SQLite)
+
+============================================================
+1. INTRODUCTION
+============================================================
+This software manages a school end-to-end: students, teachers/staff,
+classes, attendance, fees, salary, exams, timetable, notices, messaging,
+reports, backup and settings. It works fully offline. Data is stored
+locally in a SQLite database. Every action is role-based (Admin, Office,
+Teacher, Student).
+
+Default demo accounts (password: password123):
+- admin (Principal/Admin)
+- office (Office/Accounts)
+- teacher1, teacher2, teacher3
+- student logins = admission number (lowercase), e.g. adm-2026-001
+
+============================================================
+2. SIGN IN & ROLES
+============================================================
+2.1 Login
+- Open the app -> enter Username and Password -> Sign in.
+- First login forces password change (must_change_password).
+- Session auto-expires after 30 minutes of inactivity.
+
+2.2 Roles
+- Admin (Principal): full access to all modules.
+- Office/Accounts: students, staff, attendance, fees, salary, reports.
+- Teacher: own classes, attendance marking, marks entry, leave, salary slips.
+- Student: own profile, attendance, results, fees, timetable, notices.
+
+============================================================
+3. DASHBOARD
+============================================================
+- Role-based dashboard with stat cards: students, teachers, attendance,
+  fee collection, salary, exams.
+- Quick access links to common tasks.
+- Charts: attendance trend, fee collection, students per class.
+
+============================================================
+4. STUDENTS
+============================================================
+4.1 Add Student
+- Students page -> Add Student.
+- Fields: name, father name, gender, DOB, B-form, phone, address,
+  class, section, admission date, previous school, roll no, guardian.
+- Create login checkbox: username = admission number, password change required.
+
+4.2 Edit / Delete
+- Row actions: View, Edit, Delete (soft delete, keeps financial records).
+
+4.3 Import / Export
+- Import: Excel file with headers; preview rows; commit.
+- Export: Excel or PDF of filtered list.
+
+4.4 ID Cards
+- Button "ID Cards": selected students or all.
+- Generates front + back card PDF (photo, name, admission, class, father,
+  phone, parent phone on back, address, validity, signature).
+- Single student: row action ID Card icon.
+
+4.5 Promotion
+- Select students -> Promote -> choose target class/section.
+
+============================================================
+5. TEACHERS & STAFF
+============================================================
+5.1 Add Staff
+- Staff page -> Add Member.
+- Fields: employee code, name, father name, CNIC, phone, email, address,
+  qualification, designation, type (teacher/office/other), joining date,
+  basic salary, blood group, status.
+- Create login checkbox: username = employee code.
+
+5.2 Edit / Delete
+- Teacher with class assignments cannot be deleted until assignments removed.
+
+5.3 Import / Export
+- Excel import/export with same pipeline as students.
+
+============================================================
+6. CLASSES & ACADEMIC STRUCTURE
+============================================================
+6.1 Classes
+- Add class: name, code, level order, capacity, room, class teacher.
+
+6.2 Sections
+- Add section per class: name, capacity, room, class teacher.
+
+6.3 Subjects
+- Global subjects list.
+
+6.4 Class Subjects
+- Assign subjects to a class with max marks, pass marks, weekly periods.
+
+6.5 Teacher Assignments
+- Assign teacher to class + section + subject + session.
+
+6.6 Academic Sessions
+- Create/activate academic session (year range).
+
+============================================================
+7. STUDENT ATTENDANCE
+============================================================
+7.1 Daily Register
+- Attendance page -> Daily tab.
+- Select class, section, date.
+- Mark each student: Present / Absent / Leave / Late / Half day.
+- Remarks per student.
+- Mark all present button.
+- Save register (transaction).
+- Teachers: only today and assigned classes.
+- Admin/Office: any past date editable.
+
+7.2 Monthly Register
+- Monthly tab: per-student counts (present, absent, late, leave, half day,
+  marked) and attendance percentage. Flags students below 75%.
+
+7.3 Monthly Grid
+- Monthly grid tab: matrix of students x days (1..30/31) for selected month.
+- Mark each cell P/A/L/T/H/blank. Save whole month.
+
+7.4 Student History (student view)
+- Student sees own monthly calendar, counts, yearly trend.
+
+============================================================
+8. ATTENDANCE REPORTS
+============================================================
+- Students below threshold (default 75%) for a month.
+- Sortable by percentage.
+- CSV export.
+
+============================================================
+9. FEES
+============================================================
+9.1 Fee Heads (Structures)
+- Add fee head: name, type (admission/tuition/exam/transport/library/uniform/other),
+  frequency (one-time/monthly/quarterly/yearly), amount, class (optional).
+
+9.2 Concessions
+- Student-wise discount (fixed amount or percent), reason.
+
+9.3 Vouchers (Collection tab)
+- Select month, class, status, search.
+- Generate vouchers for a month (preview first).
+- Collect payment: amount, date, method (cash/bank/cheque/online), reference, remarks.
+- Receipt auto-prints if setting enabled (Settings > School).
+- Receipt includes: school name, student, father, roll no, admission, class,
+  father phone, address, month paid, voucher, amount, balance.
+
+9.4 Late Fine
+- Apply late fine to unpaid vouchers of a month.
+
+9.5 Defaulters
+- List of unpaid/partial vouchers with guardian contacts.
+- Messaging (WhatsApp/SMS/email) to guardians.
+
+9.6 Collection Report
+- Date range report: receipts, amounts by method, daily totals.
+
+============================================================
+10. SALARY & PAYROLL
+============================================================
+10.1 Salary Structure
+- Per staff: basic salary + allowances (house, medical, transport, fuel,
+  special, custom) + deductions (tax, PF, insurance, custom). Fixed or %.
+
+10.2 Advances
+- Add advance/loan with installments; cancel advance.
+
+10.3 Payroll
+- Preview payroll for a month (attendance-based deductions).
+- Generate payroll for all staff.
+- Mark paid with payment method/reference.
+- Delete payslip (returns advance recovery).
+
+10.4 Slips
+- View, print, save PDF per staff.
+
+============================================================
+11. EXAMS & RESULTS
+============================================================
+11.1 Exams
+- Create exam: name, type, session, class, dates, status.
+- Add papers (subjects) with total/pass marks.
+- Status flow: draft -> open -> published -> locked.
+
+11.2 Marks Entry
+- Teacher enters marks for assigned subjects.
+- Leave blank to clear.
+
+11.3 Results
+- Compute results (position, grade, pass/fail).
+- Result sheet with stats.
+- Report card per student (print/PDF).
+
+============================================================
+12. TIMETABLE
+============================================================
+12.1 Periods
+- Define periods: name, start/end time, sort order, break flag.
+
+12.2 Grid
+- Class/section view or teacher view.
+- Assign subject + teacher per slot.
+- Clash warnings.
+
+============================================================
+13. NOTICES
+============================================================
+- Post notice: title, body, audience (all/teachers/students/office/staff).
+- Pin to top, expiry date, show expired/unpublished.
+
+============================================================
+14. MESSAGING (Free)
+============================================================
+- Audiences: fee defaulters, absent students, student guardians, staff, custom.
+- Personalized templates with placeholders.
+- Opens WhatsApp/SMS/email apps (no paid gateway).
+- Print notices / save as PDF.
+- Phone normalization for Pakistan numbers.
+
+============================================================
+15. REPORTS
+============================================================
+- Enrolment, attendance, fee collection, payroll, results.
+- Run report -> save as PDF.
+
+============================================================
+16. SETTINGS (Admin)
+============================================================
+16.1 School
+- Name, address, phone, email, logo, report footer.
+- Auto-print fee receipt toggle.
+
+16.2 Academic
+- Session, currency, currency symbol, attendance cutoff, working days,
+  late fine, absent deduction.
+
+16.3 Appearance
+- Theme (dark/light), default language (en/ur).
+
+16.4 Security
+- View password policy values.
+
+16.5 Users & Roles
+- Create accounts, edit username, reset password, activate/deactivate.
+- User control table with search/filter.
+
+16.6 Grade Scale
+- Add/edit/delete grade bands.
+
+16.7 Data
+- Clear all data / factory reset (backup taken first).
+
+============================================================
+17. BACKUP & RESTORE
+============================================================
+- Automatic daily backup on app start.
+- Manual create backup.
+- Restore from list or import file.
+- Open backup folder.
+
+============================================================
+18. AUDIT LOG
+============================================================
+- Who did what, when, module, details.
+- Tracks login, payments, settings, user changes, imports.
+
+============================================================
+19. STUDENT SELF-SERVICE
+============================================================
+- Profile, class & subjects, attendance calendar + yearly trend,
+  results with report cards, fee status with receipts, timetable, notices.
+
+============================================================
+20. TEACHER SELF-SERVICE
+============================================================
+- My classes, attendance marking, marks entry, timetable, my attendance,
+  leave application, salary slips.
+
+============================================================
+21. TIPS
+============================================================
+- Use filters and search on every list page.
+- Backup before major changes.
+- Teachers can only mark today; admins correct history.
+- All rules enforced in main process (cannot be bypassed from UI).
+
+============================================================
+END OF GUIDE
+============================================================

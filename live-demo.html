@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>School Management System — Live Demo</title>
+  <link rel="stylesheet" href="./dist/assets/index-CzuojgsU.css">
+  <style>
+    /* Demo-only floating role switcher */
+    #demo-switcher {
+      position: fixed; bottom: 16px; right: 16px; z-index: 9999;
+      display: flex; gap: 6px; padding: 8px; border-radius: 12px;
+      background: rgba(15,19,28,0.92); border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(12px); font-family: system-ui, sans-serif;
+    }
+    #demo-switcher button {
+      height: 30px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05); color: #e9edf6; font-size: 11.5px; cursor: pointer;
+    }
+    #demo-switcher button.active { background: var(--accent,#4c7df0); border-color: transparent; color: #fff; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <div id="demo-switcher"></div>
+
+  <script>
+  // ---------- Seeded randomized demo data ----------
+  const RAND = (() => { let a = 20260101; return () => { a|=0; a=(a+0x6d2b79f5)|0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; })();
+  const pick = (arr) => arr[Math.floor(RAND()*arr.length)];
+  const pad = (n) => String(n).padStart(2,'0');
+  const today = new Date();
+  const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const dayOffset = (base, off) => new Date(base.getFullYear(), base.getMonth(), base.getDate()+off);
+
+  const CLASS_NAMES = ['Play Group','Nursery','KG','Class 1','Class 2','Class 3','Class 4','Class 5','Class 6','Class 7','Class 8','Class 9','Class 10'];
+  const classes = CLASS_NAMES.map((name,i) => ({ id:i+1, name, code:name.replace(/\s+/g,'').toUpperCase(), level_order:i+1 }));
+  const sections = [];
+  classes.forEach((c,ci) => { ['A','B'].forEach((letter,j) => { sections.push({ id: sections.length+1, class_id:c.id, name:letter, capacity:30, room_no:`R-${ci+1}${letter}`, class_name:c.name }); }); });
+  const subjectNames = ['English','Urdu','Mathematics','Science','Social Studies','Islamiyat','Computer'];
+  const subjects = subjectNames.map((name,i) => ({ id:i+1, name, code:name.slice(0,3).toUpperCase() }));
+  const classSubjects = [];
+  classes.forEach((c,ci) => { const list = ci===0?['English','Urdu','Islamiyat']:subjectNames; list.forEach((name,idx) => { classSubjects.push({ id:classSubjects.length+1, class_id:c.id, subject_id:subjects.find(s=>s.name===name).id, max_marks:100, pass_marks:40, weekly_periods:3+(idx%3), subject_name:name }); }); });
+  const structure = { classes: classes.map(c=>({...c, sections: sections.filter(s=>s.class_id===c.id)})), sections, subjects, classSubjects };
+
+  const TEACHERS = [
+    { id:1, employee_code:'T-001', name:'Ahmed Khan', father_name:'Muhammad Ahmed', subject:'Science', designation:'Senior Teacher', basic_salary:45000, phone:'0300-1234567', staff_type:'teacher' },
+    { id:2, employee_code:'T-002', name:'Sara Ali', father_name:'Ali Raza', subject:'English', designation:'Teacher', basic_salary:42000, phone:'0301-2345678', staff_type:'teacher' },
+    { id:3, employee_code:'T-003', name:'Bilal Ahmed', father_name:'Ahmed Khan', subject:'Mathematics', designation:'Teacher', basic_salary:40000, phone:'0302-3456789', staff_type:'teacher' },
+  ];
+  const OFFICE = { id:4, employee_code:'O-001', name:'Fatima Noor', father_name:'Noor Ahmed', designation:'Accountant', basic_salary:38000, phone:'0303-4567890', staff_type:'office' };
+  const allStaff = [...TEACHERS, OFFICE];
+
+  const FIRST_NAMES = ['Ayesha','Bilal','Hina','Usman','Zainab','Hamza','Maryam','Ali','Fatima','Omar','Sana','Yusuf','Amna','Tariq','Hafsa'];
+  const FATHER_NAMES = ['Muhammad Khan','Ali Raza','Usman Ghani','Tariq Mehmood','Nadeem Ahmed'];
+  const students = [];
+  let counter = 0;
+  sections.forEach(sec => {
+    for (let i=0;i<4;i++){
+      counter++;
+      const first = FIRST_NAMES[(counter-1)%FIRST_NAMES.length];
+      const father = FATHER_NAMES[(counter-1)%FATHER_NAMES.length];
+      const cls = classes.find(c=>c.id===sec.class_id);
+      students.push({
+        id: counter,
+        admission_no: `ADM-2026-${String(counter).padStart(3,'0')}`,
+        gr_no: `GR-${String(counter).padStart(3,'0')}`,
+        name: `${first} Khan`,
+        father_name: father,
+        gender: counter%2===0?'female':'male',
+        dob: ymd(dayOffset(today, -1400 - Math.floor(RAND()*1500))),
+        b_form: `37103${Math.floor(RAND()*8999999)+1000000}`,
+        phone: `03${Math.floor(RAND()*9)}${Math.floor(RAND()*8999999)+1000000}`,
+        address: `${Math.floor(RAND()*90)+1}, Block ${Math.floor(RAND()*20)+1}, Lahore`,
+        class_id: sec.class_id,
+        section_id: sec.id,
+        class_name: cls.name,
+        section_name: sec.name,
+        admission_date: ymd(dayOffset(today, -300 - Math.floor(RAND()*200))),
+        previous_school: 'Previous School',
+        roll_no: String(i+1),
+        status: 'active',
+        classHistory: [{ id:1, class_name: cls.name, section_name: sec.name, changed_at: ymd(dayOffset(today,-300)), note:'Admission' }],
+      });
+    }
+  });
+
+  const notices = [
+    { id:1, title:'Staff Meeting', body:'Monthly staff meeting on Saturday at 10:00 in the staff room.', audience:'all', pinned:1, is_active:1, expires_at:null, created_at:ymd(today) },
+    { id:2, title:'Parent Teacher Meeting', body:'PTM for Class 1 parents scheduled for next week.', audience:'students', pinned:0, is_active:1, expires_at:null, created_at:ymd(dayOffset(today,-2)) },
+    { id:3, title:'Library Week', body:'Library week starts Monday - borrow books from the school library.', audience:'all', pinned:0, is_active:1, expires_at:null, created_at:ymd(dayOffset(today,-5)) },
+  ];
+
+  const expenses = [
+    { id:1, entry_type:'expense', category:'Utilities', description:'Electricity bill', amount:18000, method:'bank', entry_date:ymd(dayOffset(today,-1)) },
+    { id:2, entry_type:'expense', category:'Maintenance', description:'Classroom repairs', amount:9500, method:'cash', entry_date:ymd(dayOffset(today,-4)) },
+    { id:3, entry_type:'expense', category:'Stationery', description:'Chalk, registers, printing', amount:4200, method:'cash', entry_date:ymd(dayOffset(today,-7)) },
+    { id:4, entry_type:'expense', category:'Transport', description:'Bus fuel', amount:22000, method:'bank', entry_date:ymd(dayOffset(today,-10)) },
+    { id:5, entry_type:'income', category:'Other Income', description:'School festival sponsorship', amount:15000, method:'bank', entry_date:ymd(dayOffset(today,-13)) },
+  ];
+
+  const exams = classes.slice(0,6).map((c,i) => ({ id:i+1, name:`Mid Term 2026`, exam_type_id:1, session_id:1, class_id:c.id, class_name:c.name, start_date:ymd(dayOffset(today,-20)), end_date:ymd(dayOffset(today,-18)), status:'published' }));
+
+  const leaveTypes = [{ id:1, name:'Sick', days:10 }, { id:2, name:'Casual', days:8 }, { id:3, name:'Annual', days:15 }];
+  const leaves = [{ id:1, staff_id:2, staff_name:'Sara Ali', leave_type:'Sick', from_date:ymd(dayOffset(today,-12)), to_date:ymd(dayOffset(today,-11)), days:2, reason:'Fever', status:'approved' }];
+
+  const users = [
+    { id:1, username:'admin', role:'admin', is_active:1, linked_id:null, display_name:'Administrator' },
+    { id:2, username:'office', role:'office', is_active:1, linked_id:4, display_name:'Fatima Noor' },
+    { id:3, username:'teacher1', role:'teacher', is_active:1, linked_id:1, display_name:'Ahmed Khan' },
+    { id:4, username:'teacher2', role:'teacher', is_active:1, linked_id:2, display_name:'Sara Ali' },
+    { id:5, username:'teacher3', role:'teacher', is_active:1, linked_id:3, display_name:'Bilal Ahmed' },
+  ];
+
+  const auditRows = [
+    { id:1, action:'login', entity:'user', entity_id:1, user:'admin', created_at:ymd(today)+' 08:30' },
+    { id:2, action:'create', entity:'student', entity_id:12, user:'admin', created_at:ymd(dayOffset(today,-1))+' 10:15' },
+    { id:3, action:'update', entity:'fee', entity_id:5, user:'office', created_at:ymd(dayOffset(today,-2))+' 14:20' },
+  ];
+
+  const settings = { school_name:'Demo Public School', theme:'dark', language:'en', logo_path:null, address:'Lahore, Pakistan', phone:'042-1234567', email:'info@demoschool.edu' };
+
+  const periods = [
+    { id:1, name:'Assembly', start_time:'08:00', end_time:'08:30', sort_order:1, is_break:0 },
+    { id:2, name:'Period 1', start_time:'08:30', end_time:'09:15', sort_order:2, is_break:0 },
+    { id:3, name:'Period 2', start_time:'09:15', end_time:'10:00', sort_order:3, is_break:0 },
+    { id:4, name:'Period 3', start_time:'10:00', end_time:'10:45', sort_order:4, is_break:0 },
+    { id:5, name:'Break', start_time:'10:45', end_time:'11:00', sort_order:5, is_break:1 },
+    { id:6, name:'Period 4', start_time:'11:00', end_time:'11:45', sort_order:6, is_break:0 },
+    { id:7, name:'Period 5', start_time:'11:45', end_time:'12:30', sort_order:7, is_break:0 },
+  ];
+
+  const timetableGrid = { days:['Mon','Tue','Wed','Thu','Fri'], periods:periods.map(p=>p.start_time), grid:{} };
+  timetableGrid.days.forEach(d => { timetableGrid.grid[d] = periods.map(p => p.is_break? 'Break' : pick(subjectNames)); });
+
+  // fees vouchers
+  const feesVouchers = students.slice(0,20).map((s,i) => {
+    const tuition = 3500 + Math.floor(RAND()*5)*250;
+    const transport = 2500;
+    const total = tuition + transport;
+    const roll = i % 5;
+    const paid = roll===0 ? total : (roll===1 ? Math.round(total/2) : 0);
+    const status = paid===0 ? 'unpaid' : (paid<total ? 'partial' : 'paid');
+    return { id:i+1, voucher_no:`VCH-05-${String(i+1).padStart(4,'0')}`, student_id:s.id, student_name:s.name, class_name:s.class_name, section_name:s.section_name, month:'2026-05', period:'05', due_date:'2026-05-10', total_amount:total, discount:0, late_fine:0, paid_amount:paid, status };
+  });
+
+  const roleParam = new URLSearchParams(location.search).get('role') || 'admin';
+  const ROLE_USERS = {
+    admin: { id:1, username:'admin', role:'admin', display_name:'Administrator', must_change_password:false },
+    office: { id:2, username:'office', role:'office', display_name:'Fatima Noor', must_change_password:false },
+    teacher: { id:3, username:'teacher1', role:'teacher', display_name:'Ahmed Khan', must_change_password:false, linked_id:1 },
+    student: { id:100, username:students[0].admission_no.toLowerCase(), role:'student', display_name:students[0].name, must_change_password:false, linked_id:students[0].id },
+  };
+  const currentUser = ROLE_USERS[roleParam] || ROLE_USERS.admin;
+
+  // Helper to wrap data in bridge response
+  const ok = (data) => ({ ok:true, data });
+
+  // Mock window.school
+  window.school = {
+    app: { getInfo: () => ok({ name:'School Management System', version:'1.0.0' }) },
+    auth: {
+      login: (c) => ok({ user: ROLE_USERS[c?.username] || currentUser, settings }),
+      logout: () => ok(null),
+      session: () => ok({ user: currentUser, settings }),
+      heartbeat: () => ok(null),
+      changePassword: () => ok(null),
+      on: (event, cb) => () => {},
+    },
+    settings: {
+      get: () => ok(settings),
+      public: () => ok(settings),
+      update: (p) => ok({ ...settings, ...p }),
+      uploadLogo: () => ok(null),
+      clearLogo: () => ok(null),
+    },
+    gradeScale: { list: () => ok([]), save: () => ok(null), remove: () => ok(null) },
+    users: {
+      list: (p) => ok({ rows: users, total: users.length }),
+      get: (id) => ok(users.find(u=>u.id===id) || users[0]),
+      create: () => ok(null), update: () => ok(null), setActive: () => ok(null), resetPassword: () => ok(null), remove: () => ok(null),
+    },
+    audit: { list: (p) => ok({ rows: auditRows, total: auditRows.length }) },
+    structure: { get: () => ok(structure) },
+    classes: { list: () => ok({ rows: classes, total: classes.length }), create:()=>ok(null), update:()=>ok(null), remove:()=>ok(null) },
+    sections: { list: () => ok({ rows: sections, total: sections.length }), create:()=>ok(null), update:()=>ok(null), remove:()=>ok(null) },
+    subjects: { list: () => ok({ rows: subjects, total: subjects.length }), create:()=>ok(null), update:()=>ok(null), remove:()=>ok(null) },
+    classSubjects: { list: () => ok({ rows: classSubjects, total: classSubjects.length }), save:()=>ok(null), remove:()=>ok(null) },
+    teacherAssignments: { list: () => ok({ rows: [], total: 0 }), save:()=>ok(null), remove:()=>ok(null) },
+    sessions: { list: () => ok([{ id:1, name:'2026-2027', is_active:1 }]), create:()=>ok(null), activate:()=>ok(null) },
+    students: {
+      list: (p) => {
+        let rows = students;
+        if (p?.search) rows = rows.filter(s => s.name.toLowerCase().includes(p.search.toLowerCase()));
+        if (p?.classId) rows = rows.filter(s => s.class_id == p.classId);
+        if (p?.sectionId) rows = rows.filter(s => s.section_id == p.sectionId);
+        if (p?.status) rows = rows.filter(s => s.status === p.status);
+        const page = p?.page||1, pageSize = p?.pageSize||25;
+        const start = (page-1)*pageSize;
+        return ok({ rows: rows.slice(start, start+pageSize), total: rows.length });
+      },
+      me: () => ok(students[0]),
+      get: (id) => ok(students.find(s=>s.id===id) || students[0]),
+      create: () => ok(null), update: () => ok(null), remove: () => ok(null), promote: () => ok({ moved: 1 }), exportExcel:()=>ok({canceled:true}), importPreview:()=>ok({rows:[], total:0}), importCommit:()=>ok({imported:0, failed:0}), exportPdf:()=>ok({canceled:true}), idCards:()=>ok({canceled:true}),
+    },
+    files: { pickImage: () => ok({ canceled:true }) },
+    staff: {
+      list: (p) => ok({ rows: allStaff, total: allStaff.length }),
+      get: (id) => ok(allStaff.find(s=>s.id===id) || allStaff[0]),
+      create:()=>ok(null), update:()=>ok(null), remove:()=>ok(null), exportExcel:()=>ok({canceled:true}), importPreview:()=>ok({rows:[],total:0}), importCommit:()=>ok({imported:0,failed:0}),
+    },
+    attendance: {
+      roster: (p) => ok({ rows: students.slice(0,15).map(s=>({ ...s, status:'present' })), total: 15 }),
+      mark: () => ok(null),
+      markAllPresent: () => ok(null),
+      register: (p) => ok({ rows: students.slice(0,15).map(s=>({ ...s, status: pick(['present','present','present','absent','late']) })), total: 15 }),
+      monthlyGrid: () => ok({ rows: [], days: [] }),
+      monthlyMark: () => ok(null),
+      studentHistory: () => ok({ rows: [] }),
+      low: () => ok({ rows: [] }),
+    },
+    staffAttendance: {
+      day: (p) => ok({ rows: allStaff.map(s=>({ ...s, status: pick(['present','present','present','absent','late']) })), total: allStaff.length }),
+      mark: () => ok(null),
+      summary: () => ok({ rows: [] }),
+      month: () => ok({ rows: [] }),
+    },
+    leaves: {
+      types: () => ok(leaveTypes),
+      list: (p) => ok({ rows: leaves, total: leaves.length }),
+      balances: () => ok({ rows: [] }),
+      balanceList: () => ok({ rows: [] }),
+      setBalance: () => ok(null),
+      apply: () => ok(null),
+      decide: () => ok(null),
+    },
+    salary: {
+      structure: () => ok({ rows: allStaff.map(s=>({ staff_id:s.id, basic_salary:s.basic_salary, allowances:[{name:'House Rent',amount:Math.round(s.basic_salary*0.4)},{name:'Medical',amount:5000},{name:'Transport',amount:3000}], deductions:[{name:'Income Tax',is_percent:1,amount:5}] })) }),
+      saveBasic:()=>ok(null), saveAllowance:()=>ok(null), deleteAllowance:()=>ok(null), saveDeduction:()=>ok(null), deleteDeduction:()=>ok(null), addAdvance:()=>ok(null), cancelAdvance:()=>ok(null), preview:()=>ok({}), generate:()=>ok(null),
+      list: (p) => ok({ rows: allStaff.map(s=>({ id:s.id, staff_id:s.id, staff_name:s.name, month:'2026-04', basic:s.basic_salary, allowances_total:Math.round(s.basic_salary*0.4)+8000, gross:s.basic_salary+Math.round(s.basic_salary*0.4)+8000, deductions_total:Math.round((s.basic_salary+Math.round(s.basic_salary*0.4)+8000)*0.05), net:s.basic_salary+Math.round(s.basic_salary*0.4)+8000-Math.round((s.basic_salary+Math.round(s.basic_salary*0.4)+8000)*0.05), status:'paid' })), total: allStaff.length }),
+      detail: (id) => ok({}),
+      markPaid:()=>ok(null), remove:()=>ok(null), mySlips:()=>ok({ rows: [] }), slipPdf:()=>ok({canceled:true}), slipPrint:()=>ok({canceled:true}),
+    },
+    fees: {
+      structures: () => ok({ rows: classes.map(c=>({ id:c.id, class_id:c.id, class_name:c.name, name:'Monthly Tuition Fee', fee_type:'tuition', frequency:'monthly', amount:3500+Math.floor(RAND()*5)*250 })) }),
+      saveStructure:()=>ok(null), deleteStructure:()=>ok(null),
+      discounts: () => ok({ rows: [] }),
+      saveDiscount:()=>ok(null), deleteDiscount:()=>ok(null),
+      vouchers: (p) => ok({ rows: feesVouchers, total: feesVouchers.length }),
+      voucherDetail: (id) => ok(feesVouchers.find(v=>v.id===id) || feesVouchers[0]),
+      preview:()=>ok({}), generate:()=>ok(null), lateFine:()=>ok(null), payment:()=>ok(null), deletePayment:()=>ok(null),
+      defaulters: () => ok({ rows: feesVouchers.filter(v=>v.status!=='paid') }),
+      collectionReport: () => ok({ rows: [] }),
+      my: () => ok({ rows: feesVouchers.filter(v=>v.student_id===students[0].id) }),
+      receiptPdf:()=>ok({canceled:true}), receiptPrint:()=>ok({canceled:true}), listPdf:()=>ok({canceled:true}), remindersPdf:()=>ok({canceled:true}),
+    },
+    messaging: {
+      recipients: () => ok({ rows: students.slice(0,10).map(s=>({ id:s.id, name:s.name, phone:s.phone })) }),
+      openLink: () => ok(null), exportCsv:()=>ok({canceled:true}), pdf:()=>ok({canceled:true}),
+    },
+    expenses: {
+      list: (p) => ok({ rows: expenses, total: expenses.length }),
+      create:()=>ok(null), update:()=>ok(null), remove:()=>ok(null),
+      report: () => ok({ rows: [] }),
+      categories: () => ok(['Utilities','Maintenance','Stationery','Transport','Other Income']),
+    },
+    exams: {
+      types: () => ok([{ id:1, name:'Mid Term' },{ id:2, name:'Final' }]),
+      list: (p) => ok({ rows: exams, total: exams.length }),
+      get: (id) => ok(exams.find(e=>e.id===id) || exams[0]),
+      create:()=>ok(null), update:()=>ok(null), remove:()=>ok(null), setStatus:()=>ok(null), saveSubjects:()=>ok(null),
+      markSheet: () => ok({ rows: [] }),
+      saveMarks:()=>ok(null),
+      resultSheet: () => ok({ rows: [] }),
+      computeResults:()=>ok(null),
+      stats: () => ok({}),
+      myResults: () => ok({ rows: [] }),
+      reportCard: () => ok({}),
+      reportCardPdf:()=>ok({canceled:true}), reportCardPrint:()=>ok({canceled:true}), resultSheetPdf:()=>ok({canceled:true}),
+    },
+    timetable: {
+      periods: (p) => ok({ rows: periods, total: periods.length }),
+      savePeriod:()=>ok(null), deletePeriod:()=>ok(null),
+      get: (p) => ok({ rows: [], grid: timetableGrid.grid, periods, days: timetableGrid.days }),
+      save:()=>ok(null),
+      my: () => ok({ rows: [], grid: timetableGrid.grid, periods, days: timetableGrid.days }),
+      teacher: () => ok({ rows: [], grid: timetableGrid.grid, periods, days: timetableGrid.days }),
+    },
+    notices: {
+      list: (p) => ok({ rows: notices, audiences: ['all','students','staff','parents'] }),
+      save:()=>ok(null), remove:()=>ok(null), pin:()=>ok(null),
+    },
+    reports: {
+      dashboard: (p) => ok({ totalStudents: students.length, totalStaff: allStaff.length, totalClasses: classes.length, feesCollected: feesVouchers.reduce((a,v)=>a+v.paid_amount,0), feesDue: feesVouchers.reduce((a,v)=>a+(v.total_amount-v.paid_amount),0) }),
+      run: () => ok({ rows: [] }),
+      pdf:()=>ok({canceled:true}),
+    },
+    backup: { list:()=>ok([]), info:()=>ok({}), create:()=>ok(null), restore:()=>ok(null), restoreFile:()=>ok(null), remove:()=>ok(null), openFolder:()=>ok(null) },
+    data: { stats:()=>ok({}), scope:()=>ok({}), clear:()=>ok(null), factoryReset:()=>ok(null) },
+  };
+
+  // Role switcher UI
+  const roles = ['admin','office','teacher','student'];
+  const sw = document.getElementById('demo-switcher');
+  roles.forEach(r => {
+    const b = document.createElement('button');
+    b.textContent = r.charAt(0).toUpperCase()+r.slice(1);
+    if (r === roleParam) b.classList.add('active');
+    b.onclick = () => { location.search = '?role=' + r; };
+    sw.appendChild(b);
+  });
+  </script>
+
+  <script src="./dist/assets/index-BvYtx9tR.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+appId: com.schoolms.app
+productName: School Management System
+copyright: Copyright © 2026 School Management System
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+  - '!**/*.map'
+  - '!**/node_modules/*/{test,__tests__,tests,example,examples,doc,docs}/**'
+  - '!**/node_modules/*/*.{md,markdown,ts,map}'
+
+asar: true
+# better-sqlite3 is a native addon and must live outside the asar archive.
+asarUnpack:
+  - '**/node_modules/better-sqlite3/**'
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  artifactName: ${productName}-Setup-${version}.${ext}
+  legalTrademarks: School Management System
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: School Management System
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  deleteAppDataOnUninstall: false
+
+publish: null
